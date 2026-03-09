@@ -8,6 +8,15 @@ A complete, production-ready **Flutter** application for learning and building w
 flutter pub get
 flutter run
 ```
+## Tech Stack
+```
+Frontend: Flutter
+Backend: AWS Lambda
+AI: Amazon Bedrock (Claude)
+Auth: Amazon Cognito
+Database: DynamoDB
+Hosting: Amazon S3
+```
 
 ## 📁 Project Structure
 
