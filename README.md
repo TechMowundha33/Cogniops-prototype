@@ -1,6 +1,8 @@
 # CogniOps — AI Teammate for Cloud Builders
 
-A complete, production-ready **Flutter** application for learning and building with cloud technologies.
+CogniOps is an AI-powered cloud learning platform that helps students and developers learn, design, and build cloud solutions. The application provides AI tutoring, adaptive learning roadmaps, quizzes, and concept explanations for students, while developers can generate cloud architectures, Terraform code, debugging suggestions, and cost estimations. The prototype is built using Flutter for the frontend and AWS services such as Amazon Bedrock, Lambda, API Gateway, DynamoDB, and Cognito to create a scalable serverless cloud learning ecosystem.
+
+
 
 ## 🚀 Quick Start
 
