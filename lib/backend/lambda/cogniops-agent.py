@@ -501,7 +501,7 @@ User request: {user_text}"""
 
         #  Persist to DynamoDB 
         ts = now_ts()
-        save_msg(session_id, "user",      user_text,                           ts)
+        save_msg(session_id, "user",user_text,ts)
         save_msg(session_id, "assistant", model_json.get("assistantText", ""), ts + 1)
 
         return resp(200, model_json)
