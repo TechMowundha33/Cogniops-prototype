@@ -11,7 +11,7 @@ bedrock    = boto3.client("bedrock-runtime", region_name=REGION)
 CHAT_TABLE = dynamodb.Table("ChatMessages")
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# Helpers
 
 def resp(code, body):
     return {
@@ -70,7 +70,7 @@ def split_text_mermaid(full: str):
     return full, None
 
 
-# ── Action detection ──────────────────────────────────────────────────────────
+# Action detection
 
 def detect_action(text: str, mode: str = "student") -> dict:
     t = text.lower().strip()
@@ -99,7 +99,7 @@ def detect_action(text: str, mode: str = "student") -> dict:
     return {"action": "chat"}
 
 
-# ── System prompts ─────────────────────────────────────────────────────────────
+# System prompts
 
 STUDENT_BASE = """You are CogniOps Tutor AI — expert mentor for Cloud, DevOps & SRE learners.
 Be encouraging, clear, and practical. Teach step-by-step with real examples.
@@ -114,7 +114,7 @@ Fill in the JSON template below exactly as shown, replacing the example values w
 """
 
 
-# ── Tool prompts ──────────────────────────────────────────────────────────────
+#  Tool prompts
 
 def tool_prompt(action: str, meta: dict, user_text: str, mode: str = "student") -> str:
 
@@ -199,18 +199,18 @@ Explain this topic clearly with 3-5 sections: {user_text}
 
     if action == "debug":
         return f"""{SCHEMA_HEADER}
-{{
-  "type": "debug",
-  "assistantText": "1-2 sentence empathetic opener about the error.",
-  "data": {{
-    "questions": ["One targeted diagnostic question"],
-    "likelyCauses": ["Most likely cause with brief reason"],
-    "fixSteps": ["Step 1: specific action", "Step 2: verify with this command"]
-  }}
-}}
-Debug this error: {user_text}
-RULES: Be concise. Exactly 1 diagnostic question, 1 likely cause, 2 fix steps.
-"""
+            {{
+              "type": "debug",
+              "assistantText": "1-2 sentence empathetic opener about the error.",
+              "data": {{
+                "questions": ["One targeted diagnostic question"],
+                "likelyCauses": ["Most likely cause with brief reason"],
+                "fixSteps": ["Step 1: specific action", "Step 2: verify with this command"]
+              }}
+            }}
+            Debug this error: {user_text}
+            RULES: Be concise. Exactly 1 diagnostic question, 1 likely cause, 2 fix steps.
+            """
 
     if action == "terraform":
         return f"""{SCHEMA_HEADER}
@@ -271,7 +271,7 @@ Provide a clear, concise answer. {followup}
 Respond in plain text only - no JSON formatting."""
 
 
-# ── Bedrock call ──────────────────────────────────────────────────────────────
+# Bedrock call 
 
 def call_bedrock(system_text: str, messages: list, max_tokens: int = 1500, model_id: str = None) -> str:
     r = bedrock.invoke_model(
@@ -304,7 +304,7 @@ def extract_json(text: str) -> dict:
     return json.loads(t)
 
 
-# ── Lambda handler ────────────────────────────────────────────────────────────
+# Lambda handler part
 
 def lambda_handler(event, context):
     if event.get("httpMethod") == "OPTIONS":
@@ -324,7 +324,7 @@ def lambda_handler(event, context):
         action      = meta["action"]
         system_text = STUDENT_BASE if mode == "student" else DEV_BASE
 
-        # ── Architecture ──────────────────────────────────────────────────────
+        #  Architecture 
         if action == "architecture":
             is_dev = mode == "dev"
             instruction = f"""Return ONLY valid JSON, no text outside it:
@@ -376,7 +376,7 @@ User request: {user_text}"""
                     "diagramUrl":          mermaid_to_url(mermaid_code) if mermaid_code else None,
                 }
 
-        # ── All other actions ─────────────────────────────────────────────────
+        # All other actions 
         else:
             instruction = tool_prompt(action, meta, user_text, mode)
             messages    = history + [{"role": "user", "content": instruction}]
@@ -435,7 +435,7 @@ User request: {user_text}"""
                                     q["explain"] = q.pop("explanation")
                         model_json["data"] = data
 
-                    # Normalise cost — model sometimes returns estimateMonthlyUSD at top level
+                    # Normalise cost — model 
                     if action == "cost":
                         import re as _re
                         data = model_json.get("data", {})
@@ -499,7 +499,7 @@ User request: {user_text}"""
                         "diagramUrl":    None,
                     }
 
-        # ── Persist to DynamoDB ───────────────────────────────────────────────
+        #  Persist to DynamoDB 
         ts = now_ts()
         save_msg(session_id, "user",      user_text,                           ts)
         save_msg(session_id, "assistant", model_json.get("assistantText", ""), ts + 1)
