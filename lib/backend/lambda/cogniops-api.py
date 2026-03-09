@@ -10,7 +10,7 @@ from boto3.dynamodb.conditions import Key
 
 
 # Environment
-# ─────────────────────────────────────────────────────────────────────────────
+
 REGION         = os.getenv("AWS_REGION", "us-east-1")
 MODEL_ID       = os.getenv("MODEL_ID", "us.anthropic.claude-sonnet-4-6")
 
@@ -21,9 +21,9 @@ PROGRESS_TABLE = os.getenv("PROGRESS_TABLE", "UserProgress")   # NEW
 ROADMAP_TABLE  = os.getenv("ROADMAP_TABLE",  "UserRoadmaps")   # NEW
 QUIZ_TABLE     = os.getenv("QUIZ_TABLE",     "QuizResults")    # NEW
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # AWS clients
-# ─────────────────────────────────────────────────────────────────────────────
+
 bedrock      = boto3.client("bedrock-runtime", region_name=REGION)
 dynamodb     = boto3.resource("dynamodb",       region_name=REGION)
 
@@ -34,9 +34,9 @@ progress_tbl = dynamodb.Table(PROGRESS_TABLE)
 roadmap_tbl  = dynamodb.Table(ROADMAP_TABLE)
 quiz_tbl     = dynamodb.Table(QUIZ_TABLE)
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Helpers
-# ─────────────────────────────────────────────────────────────────────────────
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -92,9 +92,9 @@ def _clean_item(item: dict) -> dict:
     return {k: (_decimal_to_num(v) if isinstance(v, Decimal) else v)
             for k, v in item.items()}
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Lambda handler
-# ─────────────────────────────────────────────────────────────────────────────
+
 def lambda_handler(event, context):
     method = event.get("httpMethod", "GET")
     path   = (event.get("path") or "").rstrip("/") or "/"
@@ -103,7 +103,7 @@ def lambda_handler(event, context):
     if method == "OPTIONS":
         return _resp(200, {"ok": True})
 
-    # ─── 1. Health ────────────────────────────────────────────────────────────
+    # 1. Health 
     if path == "/health" and method == "GET":
         return _resp(200, {
             "ok": True, "service": "cogniops-api",
@@ -113,7 +113,7 @@ def lambda_handler(event, context):
     body    = _get_body(event)
     user_id = _get_user_id(event, body)
 
-    # ─── 2. Profile ───────────────────────────────────────────────────────────
+    # 2. Profile 
     # GET  /profile          → fetch user profile
     # POST /profile          → create/update user profile (called after Cognito signup)
     if path == "/profile":
@@ -156,7 +156,7 @@ def lambda_handler(event, context):
             )
             return _resp(200, {"ok": True, "userId": user_id})
 
-    # ─── 3. Sessions ──────────────────────────────────────────────────────────
+    # 3. Sessions 
     if path == "/sessions":
         if method == "POST":
             session_id = str(uuid.uuid4())
@@ -176,7 +176,7 @@ def lambda_handler(event, context):
             items.sort(key=lambda x: x.get("updatedAt", ""), reverse=True)
             return _resp(200, {"userId": q_user, "sessions": items})
 
-    # ─── 4. Messages ──────────────────────────────────────────────────────────
+    # 4. Messages 
     if path == "/messages" and method == "GET":
         qs         = event.get("queryStringParameters") or {}
         session_id = (qs.get("sessionId") or "").strip()
@@ -211,7 +211,7 @@ def lambda_handler(event, context):
         ) if user_id else None
         return _resp(201, {"ok": True, "timestamp": ts})
 
-    # ─── 5. Chat (simple reply - uses cogniops_api bedrock, not agent) ────────
+    # 5. Chat 
     if path == "/chat" and method == "POST":
         session_id   = (body.get("sessionId") or "").strip()
         user_message = (body.get("message")   or "").strip()
@@ -242,9 +242,8 @@ def lambda_handler(event, context):
         )
         return _resp(200, {"reply": ai_text})
 
-    # ─── 6. Progress ──────────────────────────────────────────────────────────
-    # GET  /progress?userId=...
-    # POST /progress  { xpDelta, streakReset?, modulesCompletedDelta? }
+    # 6. Progress 
+    
     if path == "/progress":
         if method == "GET":
             qs  = event.get("queryStringParameters") or {}
@@ -311,7 +310,7 @@ def lambda_handler(event, context):
             except Exception as e:
                 return _resp(500, {"error": str(e)})
 
-    # ─── 7. Quiz Results ──────────────────────────────────────────────────────
+    # 7. Quiz Results 
     # GET  /quiz-results?userId=...&limit=10
     # POST /quiz-results  { topic, difficulty, score, total, xpEarned }
     if path == "/quiz-results":
@@ -361,10 +360,8 @@ def lambda_handler(event, context):
             except Exception as e:
                 return _resp(500, {"error": str(e)})
 
-    # ─── 8. Roadmap ───────────────────────────────────────────────────────────
-    # GET  /roadmap?userId=...
-    # POST /roadmap  { goal, weeks: [...], title }
-    # PUT  /roadmap  { roadmapId, weekIndex, done: bool }  (mark week complete)
+    # 8. Roadmap 
+    
     if path == "/roadmap":
         if method == "GET":
             qs  = event.get("queryStringParameters") or {}
@@ -418,9 +415,9 @@ def lambda_handler(event, context):
     return _resp(404, {"error": f"No route: {method} {path}"})
 
 
-# ─────────────────────────────────────────────────────────────────────────────
+
 # Bedrock helper (simple reply for /chat)
-# ─────────────────────────────────────────────────────────────────────────────
+
 def _bedrock_reply(user_message: str) -> str:
     prompt = (
         "You are CogniOps AI, a helpful mentor for Cloud/DevOps learners.\n"
